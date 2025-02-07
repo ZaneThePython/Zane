@@ -6,38 +6,38 @@
     <title>Zane.org - Posting</title>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, getDocs, doc, getDoc, serverTimestamp } 
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, getDocs, serverTimestamp, doc, getDoc }
             from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_AUTH_DOMAIN",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_STORAGE_BUCKET",
-            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-            appId: "YOUR_APP_ID"
+            apiKey: "AIzaSyBrJIVH_Hh7V_VdzwEiiY0nkdozqSh8zl0",
+            authDomain: "zane-3342f.firebaseapp.com",
+            projectId: "zane-3342f",
+            storageBucket: "zane-3342f.firebasestorage.app",
+            messagingSenderId: "430530723375",
+            appId: "1:430530723375:web:3c31fbf6836988856050da"
         };
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
 
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                window.location.href = "login.html";
+            }
+        });
+
         window.createPost = async function () {
             const user = auth.currentUser;
-            if (!user) {
-                alert("You must be logged in to post!");
-                return;
-            }
+            if (!user) return;
 
             const content = document.getElementById("content").value.trim();
-            if (content === "") {
-                alert("Post content cannot be empty!");
-                return;
-            }
+            if (content === "") return;
 
             const userDoc = await getDoc(doc(db, "users", user.uid));
-            const username = userDoc.exists() ? userDoc.data().username : "Anonymous";
+            const username = userDoc.exists() ? userDoc.data().username : "Unknown";
 
             await addDoc(collection(db, "posts"), {
                 username: username,
@@ -49,16 +49,27 @@
             loadPosts();
         };
 
-        window.logout = async function () { await signOut(auth); window.location.href = "login.html"; };
+        async function loadPosts() {
+            const postList = document.getElementById("post-list");
+            postList.innerHTML = "";
+            const querySnapshot = await getDocs(collection(db, "posts"));
+            querySnapshot.forEach((doc) => {
+                const post = doc.data();
+                const postElement = document.createElement("div");
+                postElement.innerHTML = `<strong>${post.username}</strong>: ${post.content}`;
+                postList.prepend(postElement);
+            });
+        }
 
+        window.logout = () => signOut(auth);
         window.onload = loadPosts;
     </script>
 </head>
 <body>
-    <h2>Zane.org</h2>
-    <button onclick="logout()">Logout</button>
-    <textarea id="content"></textarea><br>
+    <h2>Zane.org - Posting</h2>
+    <textarea id="content" rows="3"></textarea>
     <button onclick="createPost()">Post</button>
+    <button onclick="logout()">Logout</button>
     <div id="post-list"></div>
 </body>
 </html>
