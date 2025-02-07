@@ -24,8 +24,8 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // Function to create a post
-        async function createPost() {
+        // ✅ Fix: Make function global by assigning to `window`
+        window.createPost = async function () {
             const username = document.getElementById("username").value.trim();
             const content = document.getElementById("content").value.trim();
 
@@ -46,10 +46,10 @@
             } catch (error) {
                 console.error("Error adding post: ", error);
             }
-        }
+        };
 
-        // Function to fetch and display posts
-        async function loadPosts() {
+        // ✅ Fix: Make `loadPosts` global so it runs on page load
+        window.loadPosts = async function () {
             const postList = document.getElementById("post-list");
             postList.innerHTML = ""; // Clear current posts
 
@@ -61,7 +61,7 @@
                 postElement.innerHTML = `<strong>${post.username}</strong>: ${post.content}`;
                 postList.prepend(postElement); // Add new posts at the top
             });
-        }
+        };
 
         // Load posts when the page loads
         window.onload = loadPosts;
