@@ -59,6 +59,7 @@ button:hover {
     background-color: red;
 }
 
-#login-link {
-    margin-top: 20px;
+#login-button {
+    background-color: green;
+    margin-bottom: 10px;
 }
