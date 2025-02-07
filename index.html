@@ -3,59 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zane.org - Account System</title>
+    <title>Zane.org - Posting</title>
     <script type="module">
-        // Import Firebase SDK
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged }
-            from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, getDocs, serverTimestamp } 
+        import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, getDocs, doc, getDoc, serverTimestamp } 
             from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // 🔥 Firebase Config (Replace with your own)
         const firebaseConfig = {
-            apiKey: "AIzaSyBrJIVH_Hh7V_VdzwEiiY0nkdozqSh8zl0",
-            authDomain: "zane-3342f.firebaseapp.com",
-            projectId: "zane-3342f",
-            storageBucket: "zane-3342f.firebasestorage.app",
-            messagingSenderId: "430530723375",
-            appId: "1:430530723375:web:3c31fbf6836988856050da"
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
         };
 
-        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // ✅ Handle sign-up
-        window.signUp = async function () {
-            const email = document.getElementById("signup-email").value;
-            const password = document.getElementById("signup-password").value;
-            try {
-                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-                alert("Account created! You can now log in.");
-            } catch (error) {
-                alert("Error signing up: " + error.message);
-            }
-        };
-
-        // ✅ Handle login
-        window.login = async function () {
-            const email = document.getElementById("login-email").value;
-            const password = document.getElementById("login-password").value;
-            try {
-                await signInWithEmailAndPassword(auth, email, password);
-            } catch (error) {
-                alert("Login failed: " + error.message);
-            }
-        };
-
-        // ✅ Handle logout
-        window.logout = async function () {
-            await signOut(auth);
-        };
-
-        // ✅ Handle posting
         window.createPost = async function () {
             const user = auth.currentUser;
             if (!user) {
@@ -69,92 +36,29 @@
                 return;
             }
 
-            try {
-                await addDoc(collection(db, "posts"), {
-                    userId: user.uid,
-                    email: user.email,
-                    content: content,
-                    timestamp: serverTimestamp()
-                });
-                document.getElementById("content").value = ""; // Clear input
-                loadPosts(); // Reload posts
-            } catch (error) {
-                console.error("Error adding post: ", error);
-            }
-        };
+            const userDoc = await getDoc(doc(db, "users", user.uid));
+            const username = userDoc.exists() ? userDoc.data().username : "Anonymous";
 
-        // ✅ Fetch and display posts
-        window.loadPosts = async function () {
-            const postList = document.getElementById("post-list");
-            postList.innerHTML = "";
-
-            const querySnapshot = await getDocs(collection(db, "posts"));
-            querySnapshot.forEach((doc) => {
-                const post = doc.data();
-                const postElement = document.createElement("div");
-                postElement.classList.add("post");
-                postElement.innerHTML = `<strong>${post.email}</strong>: ${post.content}`;
-                postList.prepend(postElement);
+            await addDoc(collection(db, "posts"), {
+                username: username,
+                content: content,
+                timestamp: serverTimestamp()
             });
+
+            document.getElementById("content").value = "";
+            loadPosts();
         };
 
-        // ✅ Handle UI updates based on auth state
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                document.getElementById("auth-section").style.display = "none";
-                document.getElementById("post-section").style.display = "block";
-                document.getElementById("logout-button").style.display = "block";
-            } else {
-                document.getElementById("auth-section").style.display = "block";
-                document.getElementById("post-section").style.display = "none";
-                document.getElementById("logout-button").style.display = "none";
-            }
-        });
+        window.logout = async function () { await signOut(auth); window.location.href = "login.html"; };
 
         window.onload = loadPosts;
     </script>
-    <style>
-        body { font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; }
-        h2, h3 { text-align: center; }
-        .input-box { display: flex; flex-direction: column; margin-bottom: 15px; }
-        input, textarea, button { padding: 10px; margin: 5px 0; font-size: 16px; }
-        .post { background: #f4f4f4; padding: 10px; margin: 10px 0; border-radius: 5px; }
-        #logout-button { display: none; margin-top: 10px; }
-    </style>
 </head>
 <body>
-    <h2>Zane.org - Accounts & Posting</h2>
-
-    <!-- Sign Up & Login -->
-    <div id="auth-section">
-        <h3>Sign Up</h3>
-        <div class="input-box">
-            <input type="email" id="signup-email" placeholder="Email">
-            <input type="password" id="signup-password" placeholder="Password">
-            <button onclick="signUp()">Sign Up</button>
-        </div>
-
-        <h3>Login</h3>
-        <div class="input-box">
-            <input type="email" id="login-email" placeholder="Email">
-            <input type="password" id="login-password" placeholder="Password">
-            <button onclick="login()">Login</button>
-        </div>
-    </div>
-
-    <!-- Posting Section (Only for Logged-in Users) -->
-    <div id="post-section" style="display: none;">
-        <h3>Create a Post</h3>
-        <div class="input-box">
-            <textarea id="content" rows="3" placeholder="Write your post..."></textarea>
-            <button onclick="createPost()">Post</button>
-        </div>
-    </div>
-
-    <!-- Logout Button -->
-    <button id="logout-button" onclick="logout()">Logout</button>
-
-    <h3>Recent Posts:</h3>
+    <h2>Zane.org</h2>
+    <button onclick="logout()">Logout</button>
+    <textarea id="content"></textarea><br>
+    <button onclick="createPost()">Post</button>
     <div id="post-list"></div>
 </body>
 </html>
