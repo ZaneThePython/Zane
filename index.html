@@ -91,6 +91,7 @@
     
                 postsArray.forEach((post) => {
                     const badgeLabel = post.badge === "owner" ? `<span class="badge">OWNER</span>` : ""; // Add badge if user is an owner
+                    const badgeLabel = post.badge === "owner" ? `<span class="badge">OWNER</span>` : ""; // Add badge if user is an owner
                     
                     const postElement = document.createElement("div");
                     postElement.classList.add("post");
@@ -147,7 +148,7 @@
     <div class="container">
         <h1>Welcome to Zane</h1>
         <p class="beta-text">[BETA]</p>
-        <p class="subtitle">A posting platform that anybody can join.</p>
+        <p class="subtitle">A chatting platform that anybody can join.</p>
 
         <button id="login-button" onclick="window.location.href='login.html'">Login</button>
         <button id="logout-button" onclick="logout()" style="display: none;">Logout</button>
