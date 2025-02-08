@@ -8,7 +8,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, getDocs, serverTimestamp, doc, getDoc, updateDoc, arrayUnion, query, orderBy } 
+        import { getFirestore, collection, addDoc, getDocs, serverTimestamp, doc, getDoc, updateDoc, arrayUnion } 
             from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         // ✅ Firebase Config (Directly Included)
@@ -49,11 +49,12 @@
                 content: content,
                 timestamp: serverTimestamp(),
                 likes: 0,
-                likedBy: [] // Tracks user IDs who have liked the post
+                likedBy: [],
+                replies: [] // Stores replies as an array
             });
 
             document.getElementById("content").value = "";
-            loadPosts(); // Reload posts instantly
+            loadPosts();
         };
 
         window.likePost = async function (postId, buttonElement) {
@@ -73,27 +74,47 @@
                     return;
                 }
 
-                // Update Firestore
                 await updateDoc(postRef, {
                     likes: postData.likes + 1,
-                    likedBy: arrayUnion(user.uid) // Add user ID to likedBy array
+                    likedBy: arrayUnion(user.uid)
                 });
 
-                // ✅ Update the button dynamically without refreshing
                 buttonElement.innerHTML = `❤️ ${postData.likes + 1}`;
             }
         };
 
+        window.replyToPost = async function (postId) {
+            const user = auth.currentUser;
+            if (!user) {
+                alert("You must be logged in to reply!");
+                return;
+            }
+
+            const replyInput = document.getElementById(`reply-input-${postId}`);
+            const replyContent = replyInput.value.trim();
+            if (replyContent === "") return;
+
+            const userDoc = await getDoc(doc(db, "users", user.uid));
+            const username = userDoc.exists() ? userDoc.data().username : "Unknown";
+
+            const postRef = doc(db, "posts", postId);
+            await updateDoc(postRef, {
+                replies: arrayUnion({ username: username, content: replyContent, timestamp: Date.now() })
+            });
+
+            replyInput.value = "";
+            loadPosts(); // Reload posts to show replies
+        };
+
         async function loadPosts() {
             const postList = document.getElementById("post-list");
-            postList.innerHTML = ""; // Clear previous posts
+            postList.innerHTML = "";
 
             const postsQuery = query(collection(db, "posts"), orderBy("timestamp", "desc"));
             const querySnapshot = await getDocs(postsQuery);
 
             if (!querySnapshot.empty) {
                 let postsArray = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                shuffleArray(postsArray); // Randomize order
 
                 postsArray.forEach((post) => {
                     const postElement = document.createElement("div");
@@ -104,17 +125,18 @@
                         </div>
                         <p>${sanitizeHTML(post.content)}</p>
                         <button class="like-button" onclick="likePost('${post.id}', this)">❤️ ${post.likes || 0}</button>
+                        <div class="replies">
+                            <input type="text" id="reply-input-${post.id}" placeholder="Write a reply..." class="reply-input">
+                            <button class="reply-button" onclick="replyToPost('${post.id}')">Reply</button>
+                            ${post.replies && post.replies.length > 0 ? post.replies.map(reply => `
+                                <div class="reply">
+                                    <strong>${sanitizeHTML(reply.username)}</strong>: ${sanitizeHTML(reply.content)}
+                                </div>
+                            `).join("") : ""}
+                        </div>
                     `;
                     postList.appendChild(postElement);
                 });
-            }
-        }
-
-        // ✅ Improved randomization using Fisher-Yates Shuffle
-        function shuffleArray(array) {
-            for (let i = array.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [array[i], array[j]] = [array[j], array[i]];
             }
         }
 
@@ -123,7 +145,6 @@
         }
 
         window.logout = () => signOut(auth);
-
         window.onload = () => loadPosts();
     </script>
 </head>
