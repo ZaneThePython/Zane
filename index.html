@@ -39,13 +39,18 @@
 
             loadPosts();
         };
-
+        
         onAuthStateChanged(auth, (user) => {
-            userLoggedIn = !!user;
-            document.getElementById("post-section")?.style.display = user ? "block" : "none";
-            document.getElementById("logout-button")?.style.display = user ? "block" : "none";
-            document.getElementById("login-button")?.style.display = user ? "none" : "block";
+            userLoggedIn = !!user; // ✅ Ensures correct boolean assignment
+            const postSection = document.getElementById("post-section");
+            const loginButton = document.getElementById("login-button");
+            const logoutButton = document.getElementById("logout-button");
+        
+            if (postSection) postSection.style.display = user ? "block" : "none";
+            if (loginButton) loginButton.style.display = user ? "none" : "block";
+            if (logoutButton) logoutButton.style.display = user ? "block" : "none";
         });
+
 
         window.createPost = async function () {
             const user = auth.currentUser;
