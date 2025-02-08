@@ -203,6 +203,15 @@ input, textarea {
     margin-left: 5px;
 }
 
+/* Timestamps (Small & Light Gray) */
+.timestamp {
+    font-size: 12px;
+    color: #b0b0b0; /* Light gray */
+    margin-top: -5px;
+    margin-bottom: 5px;
+}
+
+
 /* Responsive Design */
 @media screen and (max-width: 600px) {
     .container {
