@@ -5,11 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Zane.org</title>
     <link rel="stylesheet" href="styles.css">
-    <link rel="icon" type="image/png" href="logo.png"> <!-- ✅ Favicon added -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, getDocs, serverTimestamp, doc, getDoc, updateDoc, arrayUnion } 
+        import { getFirestore, collection, addDoc, getDocs, serverTimestamp, doc, getDoc, updateDoc, arrayUnion, query, orderBy, limit, startAfter } 
             from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         // ✅ Firebase Config (Directly Included)
@@ -27,6 +26,8 @@
         const db = getFirestore(app);
 
         let userLoggedIn = false;
+        let lastVisible = null; // For pagination
+        const postsPerPage = 5; // Chunk size for loading posts
 
         onAuthStateChanged(auth, (user) => {
             userLoggedIn = !!user;
@@ -54,7 +55,7 @@
             });
 
             document.getElementById("content").value = "";
-            loadPosts();
+            loadPosts(true); // Reload posts after posting
         };
 
         window.likePost = async function (postId, buttonElement) {
@@ -85,23 +86,47 @@
             }
         };
 
-        async function loadPosts() {
+        async function loadPosts(reset = false) {
             const postList = document.getElementById("post-list");
-            postList.innerHTML = "";
-            const querySnapshot = await getDocs(collection(db, "posts"));
-            querySnapshot.forEach((doc) => {
-                const post = doc.data();
-                const postElement = document.createElement("div");
-                postElement.classList.add("post");
-                postElement.innerHTML = `
-                    <div class="post-header">
-                        <strong>${sanitizeHTML(post.username)}</strong>
-                    </div>
-                    <p>${sanitizeHTML(post.content)}</p>
-                    <button class="like-button" onclick="likePost('${doc.id}', this)">❤️ ${post.likes || 0}</button>
-                `;
-                postList.prepend(postElement);
-            });
+
+            if (reset) {
+                postList.innerHTML = ""; // Clear previous posts
+                lastVisible = null; // Reset pagination
+            }
+
+            let postsQuery = query(collection(db, "posts"), orderBy("timestamp", "desc"), limit(postsPerPage));
+            if (lastVisible) {
+                postsQuery = query(collection(db, "posts"), orderBy("timestamp", "desc"), startAfter(lastVisible), limit(postsPerPage));
+            }
+
+            const querySnapshot = await getDocs(postsQuery);
+            if (!querySnapshot.empty) {
+                lastVisible = querySnapshot.docs[querySnapshot.docs.length - 1]; // Set last document for pagination
+
+                let postsArray = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                shuffleArray(postsArray); // Better randomization
+
+                postsArray.forEach((post) => {
+                    const postElement = document.createElement("div");
+                    postElement.classList.add("post");
+                    postElement.innerHTML = `
+                        <div class="post-header">
+                            <strong>${sanitizeHTML(post.username)}</strong>
+                        </div>
+                        <p>${sanitizeHTML(post.content)}</p>
+                        <button class="like-button" onclick="likePost('${post.id}', this)">❤️ ${post.likes || 0}</button>
+                    `;
+                    postList.appendChild(postElement);
+                });
+            }
+        }
+
+        // ✅ Improved randomization using Fisher-Yates Shuffle
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
         }
 
         function sanitizeHTML(str) {
@@ -109,7 +134,15 @@
         }
 
         window.logout = () => signOut(auth);
-        window.onload = loadPosts;
+
+        // Infinite scrolling (loads more posts when scrolling down)
+        window.onscroll = () => {
+            if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 100) {
+                loadPosts();
+            }
+        };
+
+        window.onload = () => loadPosts(true);
     </script>
 </head>
 <body>
