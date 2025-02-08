@@ -6,92 +6,90 @@
     <title>Zane.org - Posts</title>
     <link rel="stylesheet" href="styles.css">
     <script type="module">
-        fetch('/firebase-config')
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error("Failed to fetch Firebase config.");
-                }
-                return response.json();
-            })
-            .then(config => {
-                import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js').then(({ initializeApp }) => {
-                    import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js').then(({ getAuth, onAuthStateChanged, signOut }) => {
-                        import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js').then(({ getFirestore, collection, addDoc, getDocs, serverTimestamp, doc, getDoc, updateDoc, increment }) => {
-                            
-                            const app = initializeApp(config);
-                            const auth = getAuth(app);
-                            const db = getFirestore(app);
+        // ✅ Firebase Config (Directly Included)
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, getDocs, serverTimestamp, doc, getDoc, updateDoc, increment }
+            from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-                            let userLoggedIn = false;
+        const firebaseConfig = {
+            apiKey: "AIzaSyBrJIVH_Hh7V_VdzwEiiY0nkdozqSh8zl0",
+            authDomain: "zane-3342f.firebaseapp.com",
+            projectId: "zane-3342f",
+            storageBucket: "zane-3342f.firebasestorage.app",
+            messagingSenderId: "430530723375",
+            appId: "1:430530723375:web:3c31fbf6836988856050da"
+        };
 
-                            onAuthStateChanged(auth, (user) => {
-                                userLoggedIn = !!user;
-                                document.getElementById("post-section").style.display = user ? "block" : "none";
-                                document.getElementById("logout-button").style.display = user ? "block" : "none";
-                                document.getElementById("login-button").style.display = user ? "none" : "block";
-                            });
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
 
-                            window.createPost = async function () {
-                                const user = auth.currentUser;
-                                if (!user) return;
+        let userLoggedIn = false;
 
-                                const content = document.getElementById("content").value.trim();
-                                if (content === "") return;
+        onAuthStateChanged(auth, (user) => {
+            userLoggedIn = !!user;
+            document.getElementById("post-section").style.display = user ? "block" : "none";
+            document.getElementById("logout-button").style.display = user ? "block" : "none";
+            document.getElementById("login-button").style.display = user ? "none" : "block";
+        });
 
-                                const userDoc = await getDoc(doc(db, "users", user.uid));
-                                const username = userDoc.exists() ? userDoc.data().username : "Unknown";
+        window.createPost = async function () {
+            const user = auth.currentUser;
+            if (!user) return;
 
-                                await addDoc(collection(db, "posts"), {
-                                    username: username,
-                                    content: content,
-                                    timestamp: serverTimestamp(),
-                                    likes: 0
-                                });
+            const content = document.getElementById("content").value.trim();
+            if (content === "") return;
 
-                                document.getElementById("content").value = "";
-                                loadPosts();
-                            };
+            const userDoc = await getDoc(doc(db, "users", user.uid));
+            const username = userDoc.exists() ? userDoc.data().username : "Unknown";
 
-                            window.likePost = async function (postId) {
-                                if (!userLoggedIn) {
-                                    alert("You must be logged in to like posts!");
-                                    return;
-                                }
-                                const postRef = doc(db, "posts", postId);
-                                await updateDoc(postRef, { likes: increment(1) });
-                                loadPosts();
-                            };
+            await addDoc(collection(db, "posts"), {
+                username: username,
+                content: content,
+                timestamp: serverTimestamp(),
+                likes: 0
+            });
 
-                            async function loadPosts() {
-                                const postList = document.getElementById("post-list");
-                                postList.innerHTML = "";
-                                const querySnapshot = await getDocs(collection(db, "posts"));
-                                querySnapshot.forEach((doc) => {
-                                    const post = doc.data();
-                                    const postElement = document.createElement("div");
-                                    postElement.classList.add("post");
-                                    postElement.innerHTML = `
-                                        <div class="post-header">
-                                            <strong>${sanitizeHTML(post.username)}</strong>
-                                        </div>
-                                        <p>${sanitizeHTML(post.content)}</p>
-                                        <button class="like-button" onclick="likePost('${doc.id}')">❤️ ${post.likes || 0}</button>
-                                    `;
-                                    postList.prepend(postElement);
-                                });
-                            }
+            document.getElementById("content").value = "";
+            loadPosts();
+        };
 
-                            function sanitizeHTML(str) {
-                                return str.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-                            }
+        window.likePost = async function (postId) {
+            if (!userLoggedIn) {
+                alert("You must be logged in to like posts!");
+                return;
+            }
+            const postRef = doc(db, "posts", postId);
+            await updateDoc(postRef, { likes: increment(1) });
+            loadPosts();
+        };
 
-                            window.logout = () => signOut(auth);
-                            window.onload = loadPosts;
-                        });
-                    });
-                });
-            })
-            .catch(error => console.error("Failed to load Firebase config:", error));
+        async function loadPosts() {
+            const postList = document.getElementById("post-list");
+            postList.innerHTML = "";
+            const querySnapshot = await getDocs(collection(db, "posts"));
+            querySnapshot.forEach((doc) => {
+                const post = doc.data();
+                const postElement = document.createElement("div");
+                postElement.classList.add("post");
+                postElement.innerHTML = `
+                    <div class="post-header">
+                        <strong>${sanitizeHTML(post.username)}</strong>
+                    </div>
+                    <p>${sanitizeHTML(post.content)}</p>
+                    <button class="like-button" onclick="likePost('${doc.id}')">❤️ ${post.likes || 0}</button>
+                `;
+                postList.prepend(postElement);
+            });
+        }
+
+        function sanitizeHTML(str) {
+            return str.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        window.logout = () => signOut(auth);
+        window.onload = loadPosts;
     </script>
 </head>
 <body>
