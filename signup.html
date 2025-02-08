@@ -6,50 +6,56 @@
     <title>Sign Up - Zane.org</title>
     <link rel="stylesheet" href="auth-styles.css">
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, createUserWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        fetch('/firebase-config')
+            .then(response => response.json())
+            .then(config => {
+                import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js').then(({ initializeApp }) => {
+                    import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js').then(({ getAuth, createUserWithEmailAndPassword, updateProfile }) => {
+                        import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js').then(({ getFirestore, doc, setDoc, getDocs, collection, query, where }) => {
+                            
+                            const app = initializeApp(config);
+                            const auth = getAuth(app);
+                            const db = getFirestore(app);
 
-        const firebaseConfig = { /* Your Firebase Config Here */ };
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
+                            window.signUp = async function () {
+                                const username = document.getElementById("username").value.trim();
+                                const email = document.getElementById("email").value.trim();
+                                const password = document.getElementById("password").value;
 
-        window.signUp = async function () {
-            const username = document.getElementById("username").value.trim();
-            const email = document.getElementById("email").value.trim();
-            const password = document.getElementById("password").value;
+                                if (username === "" || email === "" || password === "") {
+                                    alert("All fields are required!");
+                                    return;
+                                }
 
-            if (username === "" || email === "" || password === "") {
-                alert("All fields are required!");
-                return;
-            }
+                                // Check if username is taken
+                                const usernameQuery = query(collection(db, "users"), where("username", "==", username));
+                                getDocs(usernameQuery).then(usernameSnapshot => {
+                                    if (!usernameSnapshot.empty) {
+                                        alert("Username is already taken!");
+                                        return;
+                                    }
 
-            // Check if username is already taken
-            const usernameQuery = query(collection(db, "users"), where("username", "==", username));
-            const usernameSnapshot = await getDocs(usernameQuery);
-            if (!usernameSnapshot.empty) {
-                alert("Username is already taken. Please choose another.");
-                return;
-            }
+                                    // Create user
+                                    createUserWithEmailAndPassword(auth, email, password)
+                                        .then(userCredential => {
+                                            const user = userCredential.user;
+                                            updateProfile(user, { displayName: username });
 
-            try {
-                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-                const user = userCredential.user;
-
-                await updateProfile(user, { displayName: username });
-
-                await setDoc(doc(db, "users", user.uid), {
-                    username: username,
-                    email: email
+                                            // Store user info in Firestore
+                                            return setDoc(doc(db, "users", user.uid), { username: username, email: email });
+                                        })
+                                        .then(() => {
+                                            alert("Account created! Redirecting to login...");
+                                            window.location.href = "login.html";
+                                        })
+                                        .catch(error => alert("Error: " + error.message));
+                                });
+                            };
+                        });
+                    });
                 });
-
-                alert("Account created! Redirecting to login...");
-                window.location.href = "login.html";
-            } catch (error) {
-                alert("Error signing up: " + error.message);
-            }
-        };
+            })
+            .catch(error => console.error("Failed to load Firebase config:", error));
     </script>
 </head>
 <body>
