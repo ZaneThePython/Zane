@@ -22,6 +22,21 @@ body {
     margin: auto;
 }
 
+/* Beta Text */
+.beta-text {
+    font-size: 24px;
+    font-weight: bold;
+    color: #ff3b3b; /* Bright red */
+    margin-top: -5px;
+}
+
+/* Subtitle (Small Gray Text) */
+.subtitle {
+    font-size: 14px;
+    color: #b0b0b0; /* Light gray text */
+    margin-bottom: 20px;
+}
+
 /* Buttons */
 button {
     font-family: Verdana, sans-serif;
@@ -98,10 +113,10 @@ input, textarea {
     color: #ffffff;
 }
 
-/* Like Button (Heart) */
+/* Like Button (Transparent) */
 .like-button {
     font-family: Verdana, sans-serif;
-    background-color: transparent; /* Transparent background */
+    background-color: transparent;
     color: #00adff; /* Blue heart */
     padding: 5px 10px;
     border: none;
@@ -112,6 +127,36 @@ input, textarea {
 
 .like-button:hover {
     color: #008ecc; /* Slightly darker blue on hover */
+}
+
+/* Replies Section */
+.replies {
+    margin-top: 10px;
+    padding: 5px;
+    border-top: 1px solid #444444;
+}
+
+.reply-input {
+    width: 90%;
+    padding: 8px;
+    margin: 5px 0;
+    border: 1px solid #444444;
+    border-radius: 5px;
+    background: #1a1a1a;
+    color: #ffffff;
+}
+
+.reply-button {
+    background-color: #00adff;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.reply-button:hover {
+    background-color: #008ecc;
 }
 
 /* Authentication Pages (Login & Signup) */
