@@ -97,6 +97,8 @@
                         badgeLabel = `<span class="badge-mod">MOD</span>`;
                     } else if (post.badge === "official") {
                         badgeLabel = `<span class="badge-official">OFFICIAL</span>`;
+                    } else if (post.badge === "bugtester") {
+                        badgeLabel = `<span class="badge-bugtester">BUG-TESTER</span>`;
                     }
                     
                     const postElement = document.createElement("div");
