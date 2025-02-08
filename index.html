@@ -27,7 +27,7 @@
 
         let userLoggedIn = false;
         let lastVisible = null; // For pagination
-        const postsPerPage = 5; // Chunk size for loading posts
+        const postsPerPage = 5; // Load posts in chunks
 
         onAuthStateChanged(auth, (user) => {
             userLoggedIn = !!user;
@@ -55,7 +55,8 @@
             });
 
             document.getElementById("content").value = "";
-            loadPosts(true); // Reload posts after posting
+            lastVisible = null; // Reset pagination to show new post
+            loadPosts(true);
         };
 
         window.likePost = async function (postId, buttonElement) {
@@ -135,12 +136,12 @@
 
         window.logout = () => signOut(auth);
 
-        // Infinite scrolling (loads more posts when scrolling down)
-        window.onscroll = () => {
-            if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 100) {
+        // ✅ Infinite scrolling (loads more posts when scrolling down)
+        window.addEventListener("scroll", () => {
+            if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 200) {
                 loadPosts();
             }
-        };
+        });
 
         window.onload = () => loadPosts(true);
     </script>
