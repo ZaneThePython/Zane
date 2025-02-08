@@ -91,6 +91,11 @@
                 return;
             }
 
+            if (content.length > 150) {
+                alert("Your post is too long! Maximum 150 characters.");
+                return;
+            }
+
             if (containsBannedWords(content)) {
                 alert("Your post contains banned words and cannot be posted.");
                 return;
