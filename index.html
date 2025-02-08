@@ -51,7 +51,6 @@
             if (logoutButton) logoutButton.style.display = user ? "block" : "none";
         });
 
-
         window.createPost = async function () {
             const user = auth.currentUser;
             if (!user) return;
@@ -67,8 +66,7 @@
                 content: content,
                 timestamp: serverTimestamp(),
                 likes: 0,
-                likedBy: [],
-                replies: []
+                likedBy: []
             });
 
             document.getElementById("content").value = "";
@@ -102,15 +100,6 @@
                         </div>
                         <p>${sanitizeHTML(post.content)}</p>
                         <button class="like-button" onclick="likePost('${post.id}', this)">❤️ ${post.likes || 0}</button>
-                        <div class="replies">
-                            <input type="text" id="reply-input-${post.id}" placeholder="Write a reply..." class="reply-input">
-                            <button class="reply-button" onclick="replyToPost('${post.id}')">Reply</button>
-                            ${post.replies?.length > 0 ? post.replies.map(reply => `
-                                <div class="reply">
-                                    <strong>${sanitizeHTML(reply.username)}</strong>: ${sanitizeHTML(reply.content)}
-                                </div>
-                            `).join("") : ""}
-                        </div>
                     `;
                     postList.appendChild(postElement);
                 });
