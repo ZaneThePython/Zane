@@ -11,7 +11,7 @@
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, getDocs, serverTimestamp, doc, getDoc, updateDoc, arrayUnion, query, orderBy } 
             from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-    
+
         // ✅ Firebase Config (Directly Included)
         const firebaseConfig = {
             apiKey: "AIzaSyBrJIVH_Hh7V_VdzwEiiY0nkdozqSh8zl0",
@@ -21,77 +21,112 @@
             messagingSenderId: "430530723375",
             appId: "1:430530723375:web:3c31fbf6836988856050da"
         };
-    
+
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-    
+
         let userLoggedIn = false;
-    
-        window.onload = () => {
+        let bannedWords = [];
+        let bannedWordsLoaded = false;
+
+        // ✅ Fetch Banned Words from `banned-words.json`
+        async function loadBannedWords() {
+            try {
+                const response = await fetch("banned-words.json");
+                if (!response.ok) throw new Error("Failed to load banned words.");
+                const data = await response.json();
+                bannedWords = data.bannedWords || [];
+                bannedWordsLoaded = true;
+                console.log("Banned words list loaded successfully.");
+            } catch (error) {
+                console.error("Error loading banned words:", error);
+                bannedWordsLoaded = false;
+            }
+        }
+
+        window.onload = async () => {
             console.log("DOM fully loaded. Running script...");
+            await loadBannedWords();
             loadPosts();
         };
-    
+
         onAuthStateChanged(auth, (user) => {
             userLoggedIn = !!user;
             const postSection = document.getElementById("post-section");
             const loginButton = document.getElementById("login-button");
             const logoutButton = document.getElementById("logout-button");
-    
+
             if (postSection) postSection.style.display = user ? "block" : "none";
             if (loginButton) loginButton.style.display = user ? "none" : "block";
             if (logoutButton) logoutButton.style.display = user ? "block" : "none";
         });
-    
+
+        function containsBannedWords(text) {
+            if (!bannedWordsLoaded) {
+                console.warn("Banned words list not loaded. Allowing post.");
+                return false;
+            }
+            return bannedWords.some(word => text.toLowerCase().includes(word));
+        }
+
         window.createPost = async function () {
             const user = auth.currentUser;
             if (!user) return;
-    
+
+            if (!bannedWordsLoaded) {
+                alert("Banned words list is still loading. Please try again in a few seconds.");
+                return;
+            }
+
             const content = document.getElementById("content").value.trim();
             if (content === "") {
                 alert("Post cannot be empty.");
                 return;
             }
-    
+
+            if (containsBannedWords(content)) {
+                alert("Your post contains banned words and cannot be posted.");
+                return;
+            }
+
             const userDoc = await getDoc(doc(db, "users", user.uid));
             const username = userDoc.exists() ? userDoc.data().username : "Unknown";
-            const badge = userDoc.exists() ? userDoc.data().badge || "" : ""; // Get badge if it exists
-    
+            const badge = userDoc.exists() ? userDoc.data().badge || "" : "";
+
             await addDoc(collection(db, "posts"), {
                 username: username,
                 content: content,
                 timestamp: serverTimestamp(),
-                badge: badge, // Store the user's badge
+                badge: badge,
                 likes: 0,
                 likedBy: []
             });
-    
+
             document.getElementById("content").value = "";
             loadPosts();
         };
-    
+
         async function loadPosts() {
             const postList = document.getElementById("post-list");
             if (!postList) return console.error("Error: #post-list element not found.");
-    
+
             postList.innerHTML = "";
-    
+
             try {
                 const postsQuery = query(collection(db, "posts"), orderBy("timestamp", "desc"));
                 const querySnapshot = await getDocs(postsQuery);
-    
+
                 if (querySnapshot.empty) {
                     console.warn("No posts found.");
                     postList.innerHTML = "<p>No posts available.</p>";
                     return;
                 }
-    
+
                 let postsArray = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    
+
                 postsArray.forEach((post) => {
-                    const badgeLabel = post.badge === "owner" ? `<span class="badge">OWNER</span>` : ""; // Add badge if user is an owner
-                    const badgeLabel = post.badge === "owner" ? `<span class="badge">OWNER</span>` : ""; // Add badge if user is an owner
+                    const badgeLabel = post.badge === "owner" ? `<span class="badge">OWNER</span>` : "";
                     
                     const postElement = document.createElement("div");
                     postElement.classList.add("post");
@@ -104,43 +139,43 @@
                     `;
                     postList.appendChild(postElement);
                 });
-    
+
             } catch (error) {
                 console.error("Error loading posts:", error);
                 postList.innerHTML = `<p>Error loading posts. Check console for details.</p>`;
             }
         }
-    
+
         window.likePost = async function (postId, buttonElement) {
             const user = auth.currentUser;
             if (!user) {
                 alert("You must be logged in to like posts!");
                 return;
             }
-    
+
             const postRef = doc(db, "posts", postId);
             const postSnap = await getDoc(postRef);
-    
+
             if (postSnap.exists()) {
                 const postData = postSnap.data();
                 if (postData.likedBy.includes(user.uid)) {
                     alert("You have already liked this post!");
                     return;
                 }
-    
+
                 await updateDoc(postRef, {
                     likes: postData.likes + 1,
                     likedBy: arrayUnion(user.uid)
                 });
-    
+
                 buttonElement.innerHTML = `❤️ ${postData.likes + 1}`;
             }
         };
-    
+
         function sanitizeHTML(str) {
             return str.replace(/</g, "&lt;").replace(/>/g, "&gt;");
         }
-    
+
         window.logout = () => signOut(auth);
     </script>
 </head>
@@ -148,7 +183,7 @@
     <div class="container">
         <h1>Welcome to Zane</h1>
         <p class="beta-text">[BETA]</p>
-        <p class="subtitle">A chatting platform that anybody can join.</p>
+        <p class="subtitle">A posting platform that anybody can join.</p>
 
         <button id="login-button" onclick="window.location.href='login.html'">Login</button>
         <button id="logout-button" onclick="logout()" style="display: none;">Logout</button>
