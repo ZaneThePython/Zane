@@ -1,137 +1,112 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zane.org</title>
-    <link rel="stylesheet" href="styles.css">
-    <link rel="icon" type="image/png" href="logo.png">
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, getDocs, serverTimestamp, doc, getDoc, updateDoc, arrayUnion, query, orderBy } 
-            from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getFirestore, collection, addDoc, getDocs, serverTimestamp, doc, getDoc, updateDoc, arrayUnion, query, orderBy } 
+        from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // ✅ Firebase Config (Directly Included)
-        const firebaseConfig = {
-            apiKey: "AIzaSyBrJIVH_Hh7V_VdzwEiiY0nkdozqSh8zl0",
-            authDomain: "zane-3342f.firebaseapp.com",
-            projectId: "zane-3342f",
-            storageBucket: "zane-3342f.firebasestorage.app",
-            messagingSenderId: "430530723375",
-            appId: "1:430530723375:web:3c31fbf6836988856050da"
-        };
+    // ✅ Firebase Config (Directly Included)
+    const firebaseConfig = {
+        apiKey: "AIzaSyBrJIVH_Hh7V_VdzwEiiY0nkdozqSh8zl0",
+        authDomain: "zane-3342f.firebaseapp.com",
+        projectId: "zane-3342f",
+        storageBucket: "zane-3342f.firebasestorage.app",
+        messagingSenderId: "430530723375",
+        appId: "1:430530723375:web:3c31fbf6836988856050da"
+    };
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
 
-        let userLoggedIn = false;
+    let userLoggedIn = false;
 
-        window.onload = () => {
-            console.log("DOM fully loaded. Running script...");
+    onAuthStateChanged(auth, (user) => {
+        userLoggedIn = !!user;
+        document.getElementById("post-section")?.style.display = user ? "block" : "none";
+        document.getElementById("logout-button")?.style.display = user ? "block" : "none";
+        document.getElementById("login-button")?.style.display = user ? "none" : "block";
+    });
 
-            // Ensure elements exist before modifying them
-            if (!document.getElementById("post-list")) console.error("Error: #post-list element not found.");
-            if (!document.getElementById("post-section")) console.error("Error: #post-section element not found.");
-            if (!document.getElementById("login-button")) console.error("Error: #login-button element not found.");
-            if (!document.getElementById("logout-button")) console.error("Error: #logout-button element not found.");
+    // ✅ Banned Words List (Extendable)
+    const bannedWords = [
+        "nigger", "fuck", "shit", "bitch", "cunt", "asshole", "dick", "pussy", "faggot", "retard",
+        "slut", "whore", "bastard", "cock", "twat", "nigga", "coon", "chink", "spic", "kike"
+    ];
 
-            loadPosts();
-        };
-        
-        onAuthStateChanged(auth, (user) => {
-            userLoggedIn = !!user; // ✅ Ensures correct boolean assignment
-            const postSection = document.getElementById("post-section");
-            const loginButton = document.getElementById("login-button");
-            const logoutButton = document.getElementById("logout-button");
-        
-            if (postSection) postSection.style.display = user ? "block" : "none";
-            if (loginButton) loginButton.style.display = user ? "none" : "block";
-            if (logoutButton) logoutButton.style.display = user ? "block" : "none";
+    function containsBannedWords(text) {
+        return bannedWords.some(word => text.toLowerCase().includes(word));
+    }
+
+    window.createPost = async function () {
+        const user = auth.currentUser;
+        if (!user) return;
+
+        const content = document.getElementById("content").value.trim();
+        if (content === "") {
+            alert("Post cannot be empty.");
+            return;
+        }
+
+        if (containsBannedWords(content)) {
+            alert("Your post contains banned words and cannot be posted.");
+            return;
+        }
+
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        const username = userDoc.exists() ? userDoc.data().username : "Unknown";
+
+        await addDoc(collection(db, "posts"), {
+            username: username,
+            content: content,
+            timestamp: serverTimestamp(),
+            likes: 0,
+            likedBy: []
         });
 
-        window.createPost = async function () {
-            const user = auth.currentUser;
-            if (!user) return;
+        document.getElementById("content").value = "";
+        loadPosts();
+    };
 
-            const content = document.getElementById("content").value.trim();
-            if (content === "") return;
+    async function loadPosts() {
+        const postList = document.getElementById("post-list");
+        if (!postList) return console.error("Error: #post-list element not found.");
 
-            const userDoc = await getDoc(doc(db, "users", user.uid));
-            const username = userDoc.exists() ? userDoc.data().username : "Unknown";
+        postList.innerHTML = "";
 
-            await addDoc(collection(db, "posts"), {
-                username: username,
-                content: content,
-                timestamp: serverTimestamp(),
-                likes: 0,
-                likedBy: []
+        try {
+            const postsQuery = query(collection(db, "posts"), orderBy("timestamp", "desc"));
+            const querySnapshot = await getDocs(postsQuery);
+
+            if (querySnapshot.empty) {
+                console.warn("No posts found.");
+                postList.innerHTML = "<p>No posts available.</p>";
+                return;
+            }
+
+            let postsArray = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+            postsArray.forEach((post) => {
+                const postElement = document.createElement("div");
+                postElement.classList.add("post");
+                postElement.innerHTML = `
+                    <div class="post-header">
+                        <strong>${sanitizeHTML(post.username)}</strong>
+                    </div>
+                    <p>${sanitizeHTML(post.content)}</p>
+                    <button class="like-button" onclick="likePost('${post.id}', this)">❤️ ${post.likes || 0}</button>
+                `;
+                postList.appendChild(postElement);
             });
 
-            document.getElementById("content").value = "";
-            loadPosts();
-        };
-
-        async function loadPosts() {
-            const postList = document.getElementById("post-list");
-            if (!postList) return console.error("Error: #post-list element not found.");
-
-            postList.innerHTML = "";
-
-            try {
-                const postsQuery = query(collection(db, "posts"), orderBy("timestamp", "desc"));
-                const querySnapshot = await getDocs(postsQuery);
-
-                if (querySnapshot.empty) {
-                    console.warn("No posts found.");
-                    postList.innerHTML = "<p>No posts available.</p>";
-                    return;
-                }
-
-                let postsArray = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-                postsArray.forEach((post) => {
-                    const postElement = document.createElement("div");
-                    postElement.classList.add("post");
-                    postElement.innerHTML = `
-                        <div class="post-header">
-                            <strong>${sanitizeHTML(post.username)}</strong>
-                        </div>
-                        <p>${sanitizeHTML(post.content)}</p>
-                        <button class="like-button" onclick="likePost('${post.id}', this)">❤️ ${post.likes || 0}</button>
-                    `;
-                    postList.appendChild(postElement);
-                });
-
-            } catch (error) {
-                console.error("Error loading posts:", error);
-                postList.innerHTML = `<p>Error loading posts. Check console for details.</p>`;
-            }
+        } catch (error) {
+            console.error("Error loading posts:", error);
+            postList.innerHTML = `<p>Error loading posts. Check console for details.</p>`;
         }
+    }
 
-        function sanitizeHTML(str) {
-            return str.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-        }
+    function sanitizeHTML(str) {
+        return str.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
 
-        window.logout = () => signOut(auth);
-    </script>
-</head>
-<body>
-    <div class="container">
-        <h1>Welcome to Zane</h1>
-        <p class="beta-text">[BETA]</p>
-        <p class="subtitle">A posting platform that anybody can join.</p>
-
-        <button id="login-button" onclick="window.location.href='login.html'">Login</button>
-        <button id="logout-button" onclick="logout()" style="display: none;">Logout</button>
-
-        <div id="post-section" style="display: none;">
-            <textarea id="content" placeholder="Write your post..."></textarea>
-            <button id="post-button" onclick="createPost()">Post</button>
-        </div>
-
-        <div id="post-list"></div>
-    </div>
-</body>
-</html>
+    window.logout = () => signOut(auth);
+</script>
