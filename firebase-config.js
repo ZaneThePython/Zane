@@ -1,11 +1,19 @@
 export async function onRequest(context) {
     try {
-        // Fetch Firebase config from Cloudflare environment variable
-        const firebaseConfig = JSON.parse(context.env.Firebase);
-        
-        // Ensure the config contains an API key
+        // Fetch Firebase config from Cloudflare environment variables
+        const firebaseConfigString = context.env.Firebase; 
+
+        // Ensure it's not empty
+        if (!firebaseConfigString) {
+            throw new Error("Firebase config not found in environment variables.");
+        }
+
+        // Parse the stored JSON
+        const firebaseConfig = JSON.parse(firebaseConfigString);
+
+        // Ensure the API key exists
         if (!firebaseConfig.apiKey) {
-            throw new Error("Missing Firebase API key");
+            throw new Error("Invalid Firebase config: Missing API key.");
         }
 
         return new Response(JSON.stringify(firebaseConfig), {
@@ -14,6 +22,7 @@ export async function onRequest(context) {
                 "Access-Control-Allow-Origin": "*"
             }
         });
+
     } catch (error) {
         return new Response(JSON.stringify({ 
             error: "Failed to load Firebase config", 
