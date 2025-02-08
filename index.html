@@ -7,7 +7,12 @@
     <link rel="stylesheet" href="styles.css">
     <script type="module">
         fetch('/firebase-config')
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("Failed to fetch Firebase config.");
+                }
+                return response.json();
+            })
             .then(config => {
                 import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js').then(({ initializeApp }) => {
                     import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js').then(({ getAuth, onAuthStateChanged, signOut }) => {
@@ -16,8 +21,6 @@
                             const app = initializeApp(config);
                             const auth = getAuth(app);
                             const db = getFirestore(app);
-                            window.firebaseAuth = auth;
-                            window.firebaseDb = db;
 
                             let userLoggedIn = false;
 
@@ -32,7 +35,7 @@
                                 const user = auth.currentUser;
                                 if (!user) return;
 
-                                const content = document.getElementById("content").innerText.trim();
+                                const content = document.getElementById("content").value.trim();
                                 if (content === "") return;
 
                                 const userDoc = await getDoc(doc(db, "users", user.uid));
@@ -45,7 +48,7 @@
                                     likes: 0
                                 });
 
-                                document.getElementById("content").innerText = "";
+                                document.getElementById("content").value = "";
                                 loadPosts();
                             };
 
@@ -58,6 +61,25 @@
                                 await updateDoc(postRef, { likes: increment(1) });
                                 loadPosts();
                             };
+
+                            async function loadPosts() {
+                                const postList = document.getElementById("post-list");
+                                postList.innerHTML = "";
+                                const querySnapshot = await getDocs(collection(db, "posts"));
+                                querySnapshot.forEach((doc) => {
+                                    const post = doc.data();
+                                    const postElement = document.createElement("div");
+                                    postElement.classList.add("post");
+                                    postElement.innerHTML = `
+                                        <div class="post-header">
+                                            <strong>${sanitizeHTML(post.username)}</strong>
+                                        </div>
+                                        <p>${sanitizeHTML(post.content)}</p>
+                                        <button class="like-button" onclick="likePost('${doc.id}')">❤️ ${post.likes || 0}</button>
+                                    `;
+                                    postList.prepend(postElement);
+                                });
+                            }
 
                             function sanitizeHTML(str) {
                                 return str.replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -73,12 +95,19 @@
     </script>
 </head>
 <body>
-    <button id="login-button" onclick="window.location.href='login.html'">Login</button>
-    <button id="logout-button" onclick="logout()" style="display: none;">Logout</button>
-    <div id="post-section">
-        <div contenteditable="true" id="content" class="custom-textbox"></div>
-        <button onclick="createPost()">Post</button>
+    <div class="container">
+        <button id="login-button" onclick="window.location.href='login.html'">Login</button>
+        <button id="logout-button" onclick="logout()" style="display: none;">Logout</button>
+
+        <h1>Zane.org - Posts</h1>
+
+        <div id="post-section" style="display: none;">
+            <textarea id="content" placeholder="Write your post..."></textarea>
+            <button onclick="createPost()">Post</button>
+        </div>
+
+        <h2>Recent Posts:</h2>
+        <div id="post-list"></div>
     </div>
-    <div id="post-list"></div>
 </body>
 </html>
