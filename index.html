@@ -27,9 +27,27 @@
         const db = getFirestore(app);
 
         let userLoggedIn = false;
+        let bannedWords = [];
+        let bannedWordsLoaded = false;
 
-        window.onload = () => {
+        // ✅ Fetch Banned Words from `banned-words.json`
+        async function loadBannedWords() {
+            try {
+                const response = await fetch("banned-words.json");
+                if (!response.ok) throw new Error("Failed to load banned words.");
+                const data = await response.json();
+                bannedWords = data.bannedWords || [];
+                bannedWordsLoaded = true;
+                console.log("Banned words list loaded successfully.");
+            } catch (error) {
+                console.error("Error loading banned words:", error);
+                bannedWordsLoaded = false;
+            }
+        }
+
+        window.onload = async () => {
             console.log("DOM fully loaded. Running script...");
+            await loadBannedWords(); // Ensure banned words are loaded before posts are created
             loadPosts();
         };
 
@@ -44,13 +62,31 @@
             if (logoutButton) logoutButton.style.display = user ? "block" : "none";
         });
 
+        function containsBannedWords(text) {
+            if (!bannedWordsLoaded) {
+                console.warn("Banned words list not loaded. Allowing post.");
+                return false; // If the list hasn't loaded, allow the post (prevents accidental blocking)
+            }
+            return bannedWords.some(word => text.toLowerCase().includes(word));
+        }
+
         window.createPost = async function () {
             const user = auth.currentUser;
             if (!user) return;
 
+            if (!bannedWordsLoaded) {
+                alert("Banned words list is still loading. Please try again in a few seconds.");
+                return;
+            }
+
             const content = document.getElementById("content").value.trim();
             if (content === "") {
                 alert("Post cannot be empty.");
+                return;
+            }
+
+            if (containsBannedWords(content)) {
+                alert("Your post contains banned words and cannot be posted.");
                 return;
             }
 
@@ -62,9 +98,7 @@
                 content: content,
                 timestamp: serverTimestamp(),
                 likes: 0,
-                dislikes: 0,
-                likedBy: [],
-                dislikedBy: []
+                likedBy: []
             });
 
             document.getElementById("content").value = "";
@@ -98,7 +132,6 @@
                         </div>
                         <p>${sanitizeHTML(post.content)}</p>
                         <button class="like-button" onclick="likePost('${post.id}', this)">❤️ ${post.likes || 0}</button>
-                        <button class="dislike-button" onclick="dislikePost('${post.id}', this)">👎 ${post.dislikes || 0}</button>
                     `;
                     postList.appendChild(postElement);
                 });
@@ -132,32 +165,6 @@
                 });
 
                 buttonElement.innerHTML = `❤️ ${postData.likes + 1}`;
-            }
-        };
-
-        window.dislikePost = async function (postId, buttonElement) {
-            const user = auth.currentUser;
-            if (!user) {
-                alert("You must be logged in to dislike posts!");
-                return;
-            }
-
-            const postRef = doc(db, "posts", postId);
-            const postSnap = await getDoc(postRef);
-
-            if (postSnap.exists()) {
-                const postData = postSnap.data();
-                if (postData.dislikedBy.includes(user.uid)) {
-                    alert("You have already disliked this post!");
-                    return;
-                }
-
-                await updateDoc(postRef, {
-                    dislikes: postData.dislikes + 1,
-                    dislikedBy: arrayUnion(user.uid)
-                });
-
-                buttonElement.innerHTML = `👎 ${postData.dislikes + 1}`;
             }
         };
 
