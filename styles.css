@@ -171,13 +171,6 @@ input, textarea {
     box-shadow: 0px 0px 10px rgba(255, 255, 255, 0.2);
 }
 
-/* Responsive Design */
-@media screen and (max-width: 600px) {
-    .container {
-        width: 95%;
-    }
-}
-
 /* Owner Badge */
 .badge-owner {
     color: #00adff; /* Blue text */
@@ -202,3 +195,17 @@ input, textarea {
     margin-left: 5px;
 }
 
+/* Official Badge */
+.badge-bugtester {
+    color: purple; /* Purple text */
+    font-size: 12px;
+    font-weight: bold;
+    margin-left: 5px;
+}
+
+/* Responsive Design */
+@media screen and (max-width: 600px) {
+    .container {
+        width: 95%;
+    }
+}
