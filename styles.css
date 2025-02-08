@@ -47,9 +47,23 @@ button:hover {
 }
 
 #login-button {
-    background-color: #10b981;
+    background-color: #00adff; /* Vibrant blue login button */
     color: white;
     margin-bottom: 10px;
+}
+
+#login-button:hover {
+    background-color: #008ecc; /* Darker blue on hover */
+}
+
+/* Post Button */
+#post-button {
+    background-color: #00adff; /* Vibrant blue post button */
+    color: white;
+}
+
+#post-button:hover {
+    background-color: #008ecc; /* Darker blue on hover */
 }
 
 /* Input Fields */
@@ -87,7 +101,7 @@ input, textarea {
 /* Like Button */
 .like-button {
     font-family: Verdana, sans-serif;
-    background-color: #2563eb; /* Blue like button */
+    background-color: #00adff; /* Vibrant blue like button */
     color: white;
     padding: 5px 10px;
     border: none;
@@ -97,7 +111,7 @@ input, textarea {
 }
 
 .like-button:hover {
-    background-color: #1d4ed8; /* Darker blue on hover */
+    background-color: #008ecc; /* Darker blue on hover */
 }
 
 /* Authentication Pages (Login & Signup) */
