@@ -3,7 +3,7 @@ export async function onRequest(context) {
         // Fetch Firebase config from Cloudflare environment variable
         const firebaseConfig = JSON.parse(context.env.Firebase);
         
-        // Ensure that apiKey is actually present
+        // Ensure the config contains an API key
         if (!firebaseConfig.apiKey) {
             throw new Error("Missing Firebase API key");
         }
@@ -15,7 +15,10 @@ export async function onRequest(context) {
             }
         });
     } catch (error) {
-        return new Response(JSON.stringify({ error: "Failed to load Firebase config", details: error.message }), {
+        return new Response(JSON.stringify({ 
+            error: "Failed to load Firebase config", 
+            details: error.message 
+        }), {
             status: 500,
             headers: {
                 "Content-Type": "application/json",
