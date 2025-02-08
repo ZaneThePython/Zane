@@ -10,7 +10,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDocs, collection, query, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
+    
         // ✅ Firebase Config (Directly Included)
         const firebaseConfig = {
             apiKey: "AIzaSyBrJIVH_Hh7V_VdzwEiiY0nkdozqSh8zl0",
@@ -20,21 +20,30 @@
             messagingSenderId: "430530723375",
             appId: "1:430530723375:web:3c31fbf6836988856050da"
         };
-
+    
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-
+    
+        function isValidUsername(username) {
+            return /^[a-zA-Z]+$/.test(username); // ✅ Allows only letters (no spaces, numbers, or symbols)
+        }
+    
         window.signUp = async function () {
             const username = document.getElementById("username").value.trim();
             const email = document.getElementById("email").value.trim();
             const password = document.getElementById("password").value;
-
+    
             if (username === "" || email === "" || password === "") {
                 alert("All fields are required!");
                 return;
             }
-
+    
+            if (!isValidUsername(username)) {
+                alert("Username can only contain letters (no spaces, numbers, or symbols).");
+                return;
+            }
+    
             try {
                 // Check if username is taken
                 const usernameQuery = query(collection(db, "users"), where("username", "==", username));
@@ -43,19 +52,19 @@
                     alert("Username is already taken!");
                     return;
                 }
-
+    
                 // Create user
                 const userCredential = await createUserWithEmailAndPassword(auth, email, password);
                 const user = userCredential.user;
-
+    
                 await updateProfile(user, { displayName: username });
-
+    
                 // Store user info in Firestore
                 await setDoc(doc(db, "users", user.uid), {
                     username: username,
                     email: email
                 });
-
+    
                 alert("Account created! Redirecting to login...");
                 window.location.href = "login.html";
             } catch (error) {
