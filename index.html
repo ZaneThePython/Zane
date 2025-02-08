@@ -28,6 +28,8 @@
         let userLoggedIn = false;
         let lastVisible = null; // For pagination
         const postsPerPage = 5; // Load posts in chunks
+        let loadingPosts = false; // Prevents duplicate requests
+        let allPostsLoaded = false; // Stops loading when all posts are fetched
 
         onAuthStateChanged(auth, (user) => {
             userLoggedIn = !!user;
@@ -56,6 +58,7 @@
 
             document.getElementById("content").value = "";
             lastVisible = null; // Reset pagination to show new post
+            allPostsLoaded = false; // Reset auto-loading if new posts exist
             loadPosts(true);
         };
 
@@ -88,6 +91,9 @@
         };
 
         async function loadPosts(reset = false) {
+            if (loadingPosts || allPostsLoaded) return;
+            loadingPosts = true; // Prevents multiple requests
+
             const postList = document.getElementById("post-list");
 
             if (reset) {
@@ -119,7 +125,11 @@
                     `;
                     postList.appendChild(postElement);
                 });
+            } else {
+                allPostsLoaded = true; // No more posts to load
             }
+
+            loadingPosts = false; // Allow the next batch to load
         }
 
         // ✅ Improved randomization using Fisher-Yates Shuffle
@@ -136,12 +146,12 @@
 
         window.logout = () => signOut(auth);
 
-        // ✅ Infinite scrolling (loads more posts when scrolling down)
-        window.addEventListener("scroll", () => {
-            if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 200) {
+        // ✅ Auto-load new posts every second until all are loaded
+        setTimeout(() => {
+            setInterval(() => {
                 loadPosts();
-            }
-        });
+            }, 1000);
+        }, 5000); // Wait 5 seconds before starting auto-loading
 
         window.onload = () => loadPosts(true);
     </script>
