@@ -56,7 +56,7 @@
             loadPosts();
         };
 
-        window.likePost = async function (postId) {
+        window.likePost = async function (postId, buttonElement) {
             const user = auth.currentUser;
             if (!user) {
                 alert("You must be logged in to like posts!");
@@ -73,12 +73,14 @@
                     return;
                 }
 
+                // Update Firestore
                 await updateDoc(postRef, {
                     likes: postData.likes + 1,
                     likedBy: arrayUnion(user.uid) // Add user ID to likedBy array
                 });
 
-                loadPosts();
+                // ✅ Update the button dynamically without refreshing
+                buttonElement.innerHTML = `❤️ ${postData.likes + 1}`;
             }
         };
 
@@ -95,7 +97,7 @@
                         <strong>${sanitizeHTML(post.username)}</strong>
                     </div>
                     <p>${sanitizeHTML(post.content)}</p>
-                    <button class="like-button" onclick="likePost('${doc.id}')">❤️ ${post.likes || 0}</button>
+                    <button class="like-button" onclick="likePost('${doc.id}', this)">❤️ ${post.likes || 0}</button>
                 `;
                 postList.prepend(postElement);
             });
