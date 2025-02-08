@@ -7,7 +7,12 @@
     <link rel="stylesheet" href="styles.css">
     <script type="module">
         fetch('/firebase-config')
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("Failed to fetch Firebase config.");
+                }
+                return response.json();
+            })
             .then(config => {
                 import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js').then(({ initializeApp }) => {
                     import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js').then(({ getAuth, signInWithEmailAndPassword }) => {
@@ -15,6 +20,7 @@
                         const app = initializeApp(config);
                         const auth = getAuth(app);
 
+                        // ✅ Ensure `login` is always available
                         window.login = async function () {
                             const email = document.getElementById("email").value.trim();
                             const password = document.getElementById("password").value;
@@ -26,11 +32,13 @@
 
                             try {
                                 await signInWithEmailAndPassword(auth, email, password);
-                                window.location.href = "index.html"; // Redirect to main page
+                                window.location.href = "index.html";
                             } catch (error) {
                                 alert("Login failed: " + error.message);
                             }
                         };
+
+                        console.log("Firebase initialized successfully.");
                     });
                 });
             })
