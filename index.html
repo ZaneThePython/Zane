@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Zane.org</title>
-    <link rel="stylesheet" href="styles.css?v=1.1"> <!-- Forces CSS update -->
+    <link rel="stylesheet" href="styles.css?v=1.0"> <!-- Forces CSS update -->
     <link rel="icon" type="image/png" href="logo.png">
     
     <script type="module">
@@ -150,8 +150,8 @@
                     postElement.innerHTML = `
                         <div class="post-header">
                             <strong>${sanitizeHTML(post.username)}</strong> ${badgeLabel}
+                            <span class="timestamp">${sanitizeHTML(timestampFormatted)}</span>
                         </div>
-                        <p class="timestamp">${sanitizeHTML(timestampFormatted)}</p>
                         <p>${sanitizeHTML(post.content)}</p>
                         <button class="like-button" onclick="likePost('${post.id}', this)">❤️ ${post.likes || 0}</button>
                     `;
