@@ -179,12 +179,26 @@ input, textarea {
 }
 
 /* Owner Badge */
-.badge {
-    background-color: #00adff; /* Bright red */
-    color: white;
+.badge-owner {
+    color: #00adff; /* Blue text */
     font-size: 12px;
     font-weight: bold;
-    padding: 2px 6px;
-    border-radius: 5px;
     margin-left: 5px;
 }
+
+/* Mod Badge */
+.badge-mod {
+    color: red; /* Red text */
+    font-size: 12px;
+    font-weight: bold;
+    margin-left: 5px;
+}
+
+/* Official Badge */
+.badge-official {
+    color: green; /* Green text */
+    font-size: 12px;
+    font-weight: bold;
+    margin-left: 5px;
+}
+
