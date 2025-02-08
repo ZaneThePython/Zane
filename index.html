@@ -8,7 +8,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, getDocs, serverTimestamp, doc, getDoc, updateDoc, arrayUnion, query, orderBy, limit, startAfter } 
+        import { getFirestore, collection, addDoc, getDocs, serverTimestamp, doc, getDoc, updateDoc, arrayUnion, query, orderBy } 
             from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         // ✅ Firebase Config (Directly Included)
@@ -26,10 +26,6 @@
         const db = getFirestore(app);
 
         let userLoggedIn = false;
-        let lastVisible = null; // For pagination
-        const postsPerPage = 5; // Load posts in chunks
-        let loadingPosts = false; // Prevents duplicate requests
-        let allPostsLoaded = false; // Stops loading when all posts are fetched
 
         onAuthStateChanged(auth, (user) => {
             userLoggedIn = !!user;
@@ -57,9 +53,7 @@
             });
 
             document.getElementById("content").value = "";
-            lastVisible = null; // Reset pagination to show new post
-            allPostsLoaded = false; // Reset auto-loading if new posts exist
-            loadPosts(true);
+            loadPosts(); // Reload posts instantly
         };
 
         window.likePost = async function (postId, buttonElement) {
@@ -90,28 +84,16 @@
             }
         };
 
-        async function loadPosts(reset = false) {
-            if (loadingPosts || allPostsLoaded) return;
-            loadingPosts = true; // Prevents multiple requests
-
+        async function loadPosts() {
             const postList = document.getElementById("post-list");
+            postList.innerHTML = ""; // Clear previous posts
 
-            if (reset) {
-                postList.innerHTML = ""; // Clear previous posts
-                lastVisible = null; // Reset pagination
-            }
-
-            let postsQuery = query(collection(db, "posts"), orderBy("timestamp", "desc"), limit(postsPerPage));
-            if (lastVisible) {
-                postsQuery = query(collection(db, "posts"), orderBy("timestamp", "desc"), startAfter(lastVisible), limit(postsPerPage));
-            }
-
+            const postsQuery = query(collection(db, "posts"), orderBy("timestamp", "desc"));
             const querySnapshot = await getDocs(postsQuery);
-            if (!querySnapshot.empty) {
-                lastVisible = querySnapshot.docs[querySnapshot.docs.length - 1]; // Set last document for pagination
 
+            if (!querySnapshot.empty) {
                 let postsArray = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                shuffleArray(postsArray); // Better randomization
+                shuffleArray(postsArray); // Randomize order
 
                 postsArray.forEach((post) => {
                     const postElement = document.createElement("div");
@@ -125,11 +107,7 @@
                     `;
                     postList.appendChild(postElement);
                 });
-            } else {
-                allPostsLoaded = true; // No more posts to load
             }
-
-            loadingPosts = false; // Allow the next batch to load
         }
 
         // ✅ Improved randomization using Fisher-Yates Shuffle
@@ -146,14 +124,7 @@
 
         window.logout = () => signOut(auth);
 
-        // ✅ Auto-load new posts every second until all are loaded
-        setTimeout(() => {
-            setInterval(() => {
-                loadPosts();
-            }, 1000);
-        }, 5000); // Wait 5 seconds before starting auto-loading
-
-        window.onload = () => loadPosts(true);
+        window.onload = () => loadPosts();
     </script>
 </head>
 <body>
