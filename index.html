@@ -13,7 +13,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, getDocs, serverTimestamp, doc, getDoc, updateDoc, arrayUnion, query, orderBy } 
+        import { getFirestore, collection, addDoc, getDocs, serverTimestamp, doc, getDoc, updateDoc, arrayUnion, query, orderBy, where, deleteDoc } 
             from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         // ✅ Firebase Config (Directly Included)
@@ -301,7 +301,7 @@
                 const repliesContainer = document.getElementById(`replies-${postId}`);
                 if (!repliesContainer) return;
 
-                const repliesQuery = query(collection(db, "posts", postId, "replies"));
+                const repliesQuery = query(collection(db, "replies"), where("postId", "==", postId));
                 const querySnapshot = await getDocs(repliesQuery);
 
                 if (querySnapshot.empty) {
@@ -378,27 +378,17 @@
             }
 
             try {
-                // First verify the post exists
-                const postRef = doc(db, "posts", postId);
-                const postSnap = await getDoc(postRef);
-                
-                if (!postSnap.exists()) {
-                    throw new Error("Post not found");
-                }
-
                 const userDoc = await getDoc(doc(db, "users", user.uid));
                 const username = userDoc.exists() ? userDoc.data().username : "Unknown";
 
-                // Create the reply document
-                const replyData = {
+                // Create the reply in the replies collection
+                await addDoc(collection(db, "replies"), {
+                    userId: user.uid,
                     username: username,
                     content: content,
+                    postId: postId,
                     timestamp: serverTimestamp()
-                };
-
-                // Add the reply to the subcollection
-                const repliesRef = collection(db, "posts", postId, "replies");
-                await addDoc(repliesRef, replyData);
+                });
 
                 userReputation += 1; // Increase reputation for good reply
                 updateUserReputation(user.uid);
@@ -422,30 +412,52 @@
                 return;
             }
 
-            const postRef = doc(db, "posts", postId);
-            const postSnap = await getDoc(postRef);
+            try {
+                // Check if user has already liked the post
+                const likesQuery = query(
+                    collection(db, "likes"),
+                    where("userId", "==", user.uid),
+                    where("postId", "==", postId)
+                );
+                const likesSnapshot = await getDocs(likesQuery);
 
-            if (postSnap.exists()) {
-                const postData = postSnap.data();
-                const isLiked = postData.likedBy && postData.likedBy.includes(user.uid);
-                
-                if (isLiked) {
-                    // Unlike the post
-                    await updateDoc(postRef, {
-                        likes: postData.likes - 1,
-                        likedBy: postData.likedBy.filter(id => id !== user.uid)
-                    });
-                    buttonElement.innerHTML = `❤️ ${postData.likes - 1}`;
-                    buttonElement.classList.remove('liked');
-                } else {
+                if (likesSnapshot.empty) {
                     // Like the post
-                    await updateDoc(postRef, {
-                        likes: postData.likes + 1,
-                        likedBy: arrayUnion(user.uid)
+                    await addDoc(collection(db, "likes"), {
+                        userId: user.uid,
+                        postId: postId,
+                        timestamp: serverTimestamp()
                     });
-                    buttonElement.innerHTML = `❤️ ${postData.likes + 1}`;
+
+                    // Get total likes count
+                    const totalLikesQuery = query(
+                        collection(db, "likes"),
+                        where("postId", "==", postId)
+                    );
+                    const totalLikesSnapshot = await getDocs(totalLikesQuery);
+                    const totalLikes = totalLikesSnapshot.size;
+
+                    buttonElement.innerHTML = `❤️ ${totalLikes}`;
                     buttonElement.classList.add('liked');
+                } else {
+                    // Unlike the post
+                    const likeDoc = likesSnapshot.docs[0];
+                    await deleteDoc(doc(db, "likes", likeDoc.id));
+
+                    // Get updated total likes count
+                    const totalLikesQuery = query(
+                        collection(db, "likes"),
+                        where("postId", "==", postId)
+                    );
+                    const totalLikesSnapshot = await getDocs(totalLikesQuery);
+                    const totalLikes = totalLikesSnapshot.size;
+
+                    buttonElement.innerHTML = `❤️ ${totalLikes}`;
+                    buttonElement.classList.remove('liked');
                 }
+            } catch (error) {
+                console.error("Error toggling like:", error);
+                alert("Failed to like/unlike post");
             }
         };
 
