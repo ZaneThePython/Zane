@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Updates - Zane.org</title>
+    <link rel="stylesheet" href="styles.css?v=1.3">
+    <link rel="icon" type="image/png" href="logo.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Update Log</h1>
+            <p class="subtitle">Track the latest changes and improvements</p>
+        </header>
+
+        <nav class="main-nav">
+            <button onclick="window.location.href='index.html'">Home</button>
+            <button onclick="window.location.href='privacy-policy.html'">Privacy Policy</button>
+            <button onclick="window.location.href='rules.html'">Rules</button>
+        </nav>
+
+        <div class="glass-container">
+            <div id="update-log" class="update-log">
+                <!-- Template for new updates - Copy and modify this structure -->
+                <!--
+                <div class="update-entry">
+                    <div class="update-header">
+                        <span class="update-date">March 14, 2024</span>
+                        <span class="update-version">v1.0.0</span>
+                    </div>
+                    <div class="update-content">
+                        <h3>Initial Release</h3>
+                        <p>The first version of the platform with core features</p>
+                        <ul class="update-changes">
+                            <li>Added user authentication system</li>
+                            <li>Implemented post creation and replies</li>
+                            <li>Added like/unlike functionality</li>
+                            <li>Created modern glass-morphism UI</li>
+                            <li>Added moderation system</li>
+                            <li>Implemented user reputation</li>
+                            <li>Added rate limiting</li>
+                            <li>Created update log system</li>
+                        </ul>
+                    </div>
+                </div>
+                -->
+                <div class="update-entry">
+                    <div class="update-header">
+                        <span class="update-date">March 26, 2025</span>
+                        <span class="update-version">v3.0.0</span>
+                    </div>
+                    <div class="update-content">
+                        <h3>Full Revamp</h3>
+                        <p>Zane.org has been fully revamped. This includes a new UI, new features, and a new backend.</p>
+                        <ul class="update-changes">
+                            <li>Implemented replies to posts</li>
+                            <li>Added Unlike functionality</li>
+                            <li>Created modern glass like UI</li>
+                            <li>Improved moderation system</li>
+                            <li>Implemented user reputation</li>
+                            <li>Added rate limiting</li>
+                            <li>Created update log system</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Add this to your existing CSS
+        const style = document.createElement('style');
+        style.textContent = `
+            .update-log {
+                max-height: 600px;
+                overflow-y: auto;
+                padding: 1rem;
+            }
+
+            .update-entry {
+                background: rgba(255, 255, 255, 0.1);
+                border-radius: 10px;
+                padding: 1.5rem;
+                margin-bottom: 1.5rem;
+                backdrop-filter: blur(10px);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                transition: transform 0.2s ease, box-shadow 0.2s ease;
+            }
+
+            .update-entry:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            }
+
+            .update-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 1rem;
+                color: #888;
+                font-size: 0.9rem;
+            }
+
+            .update-version {
+                background: rgba(255, 255, 255, 0.2);
+                padding: 0.3rem 0.8rem;
+                border-radius: 4px;
+                font-size: 0.8rem;
+                font-weight: 500;
+            }
+
+            .update-content h3 {
+                margin: 0 0 0.8rem 0;
+                color: #fff;
+                font-size: 1.4rem;
+                font-weight: 600;
+            }
+
+            .update-content p {
+                margin: 0 0 1rem 0;
+                color: #ddd;
+                line-height: 1.6;
+            }
+
+            .update-changes {
+                margin: 1rem 0 0 0;
+                padding-left: 1.5rem;
+                color: #ddd;
+            }
+
+            .update-changes li {
+                margin-bottom: 0.5rem;
+                line-height: 1.5;
+            }
+
+            .update-date {
+                color: #888;
+                font-size: 0.9rem;
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html> 

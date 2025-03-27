@@ -6,6 +6,9 @@
     <title>Sign Up - Zane.org</title>
     <link rel="icon" type="image/png" href="logo.png">
     <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
@@ -74,14 +77,36 @@
     </script>
 </head>
 <body>
-    <div class="auth-container">
-        <h2>Sign Up</h2>
-        <input type="text" id="username" placeholder="Username" required>
-        <input type="email" id="email" placeholder="Email" required>
-        <input type="password" id="password" placeholder="Password" required>
-        <button onclick="signUp()">Sign Up</button>
-        <p>Already have an account?</p>
-        <button onclick="window.location.href='login.html'">Login</button>
+    <div class="container">
+        <header>
+            <h1>Create Account</h1>
+            <p class="subtitle">Join the Zane community</p>
+        </header>
+
+        <div class="auth-form">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" placeholder="Choose a username" required>
+                <small class="form-hint">Letters only, no spaces or special characters</small>
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" placeholder="Enter your email" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" placeholder="Create a password" required>
+            </div>
+
+            <button onclick="signUp()" class="primary-button">Create Account</button>
+
+            <div class="auth-links">
+                <p>Already have an account? <a href="login.html">Login</a></p>
+                <a href="index.html" class="back-link">← Back to Home</a>
+            </div>
+        </div>
     </div>
 </body>
 </html>
